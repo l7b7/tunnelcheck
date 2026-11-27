@@ -21,9 +21,11 @@ jobs:
           mkdir -p dist
           for arch in amd64 arm64; do
             GOOS=linux GOARCH="$arch" CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o "dist/tunnelcheck-linux-$arch" ./cmd/tunnelcheck
+            GOOS=linux GOARCH="$arch" CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o "dist/httpcheck-linux-$arch" ./cmd/httpcheck
           done
           (cd dist && sha256sum tunnelcheck-linux-* > SHA256SUMS)
       - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
+
