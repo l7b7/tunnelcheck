@@ -6,9 +6,10 @@ if [[ "$(uname -s)" != "Linux" ]]; then
 fi
 command -v go >/dev/null || { echo "Install Go 1.26+ first." >&2; exit 1; }
 root="$(cd "$(dirname "$0")/.." && pwd)"
-(cd "$root" && go install ./cmd/tunnelcheck)
+(cd "$root" && go install ./cmd/httpcheck ./cmd/tunnelcheck)
 bin="$(go env GOPATH)/bin"
 case ":$PATH:" in
   *":$bin:"*) ;;
-  *) echo "Add $bin to PATH, then run: tunnelcheck -h" ;;
+  *) echo "Add $bin to PATH, then run: httpcheck -h or tunnelcheck -h" ;;
 esac
+
