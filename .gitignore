@@ -1,0 +1,6 @@
+/work/
+/outputs/
+/tunnelcheck
+/tunnelcheck.exe
+/labs/certs/*
+!/labs/certs/.gitkeep
