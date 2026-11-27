@@ -176,10 +176,7 @@ func runScan(args []string) error {
 	if *jsonOut {
 		return json.NewEncoder(os.Stdout).Encode(report)
 	}
-	fmt.Printf("Target: %s\nRequests: 2 HEAD probes (no redirects)\n\n", u)
-	printProbe(report.HTTP1)
-	printProbe(report.HTTP2)
-	fmt.Println("Note:", report.Note)
+	printSummary(report)
 	return nil
 }
 
@@ -261,16 +258,62 @@ func compactError(err error) string {
 	return message
 }
 
-func printProbe(p probeResult) {
-	fmt.Printf("%s: ", p.Protocol)
-	if p.Supported {
-		fmt.Printf("supported — %s, status %d, ALPN %q, %d ms\n", p.HTTP, p.Status, p.TLSALPN, p.Duration)
+func printSummary(r scanReport) {
+	fmt.Println("HTTP posture — summary")
+	fmt.Printf("Target: %s\nRequests: %d HEAD probes; no redirects or query string\n\n", r.Target, r.Requests)
+	fmt.Println("Protocol response")
+	printProtocolResult(r.HTTP1)
+	printProtocolResult(r.HTTP2)
+
+	fmt.Println("\nSecurity header observations")
+	labels := []struct{ key, label string }{
+		{"Strict-Transport-Security", "HSTS"},
+		{"X-Content-Type-Options", "Content type sniffing protection"},
+		{"X-Frame-Options", "Frame embedding policy"},
+		{"Content-Security-Policy", "Content Security Policy"},
+		{"Referrer-Policy", "Referrer policy"},
+		{"Permissions-Policy", "Permissions policy"},
+	}
+	for _, item := range labels {
+		a, b := r.HTTP1.Headers[item.key], r.HTTP2.Headers[item.key]
+		switch {
+		case a != "" && b != "" && a == b:
+			fmt.Printf("  %s: observed on both — %s\n", item.label, a)
+		case a != "" && b != "" && a != b:
+			fmt.Printf("  %s: differs — H1: %s; H2: %s\n", item.label, a, b)
+		case a != "" || b != "":
+			fmt.Printf("  %s: observed on %s only\n", item.label, protocolName(a != ""))
+		default:
+			fmt.Printf("  %s: not observed in these responses\n", item.label)
+		}
+	}
+	fmt.Println("\nAssessment")
+	if r.HTTP1.Supported && r.HTTP2.Supported {
+		fmt.Println("  Site responded over HTTP/1.1 and HTTP/2. Protocol support alone is not a vulnerability.")
 	} else {
-		fmt.Printf("no successful response — %s\n", p.Error)
+		fmt.Println("  One or more probes did not receive an HTTP response; this does not by itself prove the protocol is disabled.")
 	}
-	for k, v := range p.Headers {
-		fmt.Printf("  %s: %s\n", k, v)
+	fmt.Println("  Missing headers are review notes, not confirmed findings. No exploit or vulnerability test was run.")
+}
+
+func printProtocolResult(p probeResult) {
+	fmt.Printf("  %s: ", p.Protocol)
+	if !p.Supported {
+		fmt.Printf("no successful HTTP response (%s)\n", p.Error)
+		return
 	}
+	fmt.Printf("responded — %s, status %d", p.HTTP, p.Status)
+	if p.TLSALPN != "" {
+		fmt.Printf(", ALPN %s", p.TLSALPN)
+	}
+	fmt.Printf(", %d ms\n", p.Duration)
+}
+
+func protocolName(isH1 bool) string {
+	if isH1 {
+		return "HTTP/1.1"
+	}
+	return "HTTP/2"
 }
 
 var cvePattern = regexp.MustCompile(`^CVE-[0-9]{4}-[0-9]{4,}$`)
