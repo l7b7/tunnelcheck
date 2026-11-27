@@ -27,14 +27,14 @@ go test ./...
 go install ./cmd/tunnelcheck
 ```
 
-أو استخدم `scripts/install-kali.sh`. تأكد أن `$(go env GOPATH)/bin` ضمن `PATH`.
+أو استخدم `bash scripts/install-kali.sh`. تأكد أن `$(go env GOPATH)/bin` ضمن `PATH`.
 
 ## تشغيل محلي
 
 أنشئ شهادة المختبر وشغّل Envoy والهدف المحلي:
 
 ```bash
-./labs/make-certs.sh
+bash labs/make-certs.sh
 docker compose -f labs/docker-compose.yml up --build
 ```
 
