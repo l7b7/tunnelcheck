@@ -1,0 +1,23 @@
+services:
+  target:
+    build: ./target
+    expose: ["8443"]
+    networks: [labnet]
+    restart: unless-stopped
+
+  proxy:
+    image: envoyproxy/envoy:v1.35.0
+    command: ["-c", "/etc/envoy/envoy.yaml", "--log-level", "info"]
+    depends_on: [target]
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:9443:9443"
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./certs:/etc/envoy/certs:ro
+    networks: [labnet]
+    restart: unless-stopped
+
+networks:
+  labnet:
+    internal: true
