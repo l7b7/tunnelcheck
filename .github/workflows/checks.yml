@@ -17,5 +17,5 @@ jobs:
       - run: test -z "$(gofmt -l cmd/tunnelcheck)"
       - run: go test ./...
       - run: go vet ./...
-      - run: mkdir -p dist && go build -trimpath -o dist/tunnelcheck ./cmd/tunnelcheck
+      - run: mkdir -p dist && go build -trimpath -o dist/tunnelcheck ./cmd/tunnelcheck && go build -trimpath -o dist/httpcheck ./cmd/httpcheck
 
